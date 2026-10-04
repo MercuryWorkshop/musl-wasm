@@ -13,6 +13,16 @@
 
 	.globaltype __stack_pointer, i32
 
+	.globaltype __tls_base, i32
+
+	.globl __gex_set_tls_base
+	.type __gex_set_tls_base,@function
+__gex_set_tls_base:
+	.functype __gex_set_tls_base (i32) -> ()
+	local.get 0
+	global.set __tls_base
+	end_function
+
 	.globaltype __gex_ctx, i32
 __gex_ctx:
 	.globaltype __gex_tp, i32
