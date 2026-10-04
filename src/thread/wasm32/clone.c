@@ -33,7 +33,7 @@ int __clone(int (*func)(void *), void *stack, int flags, void *arg, ...)
 	/* The child's module instance starts with fresh globals: it gets a
 	 * thread pointer either way, and a fresh TLS block only for
 	 * CLONE_SETTLS (otherwise it shares the caller's, as on Linux). */
-	sp[2] = (flags & CLONE_SETTLS) ? (unsigned long)tls : (unsigned long)__pthread_self();
+	sp[2] = (flags & CLONE_SETTLS) ? (unsigned long)tls : (unsigned long)__get_tp();
 	sp[3] = !!(flags & CLONE_SETTLS);
 
 	/* The i386 kernel takes a struct user_desc for CLONE_SETTLS; the

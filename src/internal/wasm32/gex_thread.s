@@ -94,3 +94,40 @@ __gex_thread_start:
 	call __gex_thread_c
 	unreachable
 	end_function
+
+# The C stack pointer, for the syscall stub (it publishes it as the guest
+# ESP so a signal frame lands below everything live).
+	.globl __gex_get_sp
+	.type __gex_get_sp,@function
+__gex_get_sp:
+	.functype __gex_get_sp () -> (i32)
+	global.get __stack_pointer
+	end_function
+
+# __gex_call_handler(handler, sig, info, uc, sp, rt): run a signal handler
+# on the C stack at `sp` (just below the kernel's frame): rt handlers are
+# void (int, siginfo_t *, void *), the others void (int).
+	.globl __gex_call_handler
+	.type __gex_call_handler,@function
+__gex_call_handler:
+	.functype __gex_call_handler (i32, i32, i32, i32, i32, i32) -> ()
+	.local i32
+	global.get __stack_pointer
+	local.set 6
+	local.get 4
+	global.set __stack_pointer
+	local.get 5
+	if
+	local.get 1
+	local.get 2
+	local.get 3
+	local.get 0
+	call_indirect __indirect_function_table, (i32, i32, i32) -> ()
+	else
+	local.get 1
+	local.get 0
+	call_indirect __indirect_function_table, (i32) -> ()
+	end_if
+	local.get 6
+	global.set __stack_pointer
+	end_function

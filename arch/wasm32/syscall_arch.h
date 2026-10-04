@@ -16,9 +16,18 @@ void __gex_syscall_import(int, long long);
 
 /* ctx slots: x(n) = 8 * n. eax 0, ecx 1, edx 2, ebx 3, esp 4, ebp 5,
  * esi 6, edi 7; PC is slot 32. */
+unsigned long __gex_get_sp(void);
+void __gex_signal_frames(volatile unsigned long long *, unsigned long long);
+
+/* Signals (gex-kernel's wasm32 personality): a handler frame is set up in
+ * the context at a syscall's return, PC = the handler, and the syscall
+ * returns normally; __gex_signal_frames runs the handler and sigreturns.
+ * ESP is published as the C stack pointer so the frame lands below
+ * everything live. */
 static inline long __gex_sc(long n, long a, long b, long c, long d, long e, long f)
 {
 	volatile unsigned long long *x = (volatile unsigned long long *)__gex_get_ctx();
+	unsigned long long pc = x[32];
 	x[0] = (unsigned long)n;
 	x[3] = (unsigned long)a;
 	x[1] = (unsigned long)b;
@@ -26,7 +35,10 @@ static inline long __gex_sc(long n, long a, long b, long c, long d, long e, long
 	x[6] = (unsigned long)d;
 	x[7] = (unsigned long)e;
 	x[5] = (unsigned long)f;
+	x[4] = (__gex_get_sp() - 256) & -16UL;
 	__gex_syscall_import((int)(unsigned long)x, 0);
+	if (__builtin_expect(x[32] != pc, 0))
+		__gex_signal_frames(x, pc);
 	return (long)(unsigned long)x[0];
 }
 
