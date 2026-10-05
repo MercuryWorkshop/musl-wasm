@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#define __GEXW_NO_VFORK_MACRO
 #include <unistd.h>
 #include <signal.h>
 #include "syscall.h"
