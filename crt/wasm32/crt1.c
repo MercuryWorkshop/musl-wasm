@@ -6,8 +6,10 @@
 
 /* clang renames main on wasm: main(void) is __original_main and
  * main(int, char **) is __main_argc_argv. */
-int __original_main(void);
-weak int __main_argc_argv(int argc, char **argv) { return __original_main(); }
+/* (__main_argc_argv referenced strongly, so a main in an archive member is
+ * pulled in; libc's own weak definition, for main(void), calls
+ * __original_main: src/env/wasm32/__main_argc_argv.c) */
+int __main_argc_argv(int argc, char **argv);
 static int main_shim(int argc, char **argv, char **envp) { return __main_argc_argv(argc, argv); }
 weak void _init();
 weak void _fini();
