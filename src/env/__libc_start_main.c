@@ -56,19 +56,9 @@ void __init_libc(char **envp, char *pn)
 	libc.secure = 1;
 }
 
-#ifdef __wasm32__
-/* wasm-ld gathers the constructors into this function (a wasm module has
- * no .init_array); with no _start of its own (gex enters __gex_start),
- * nothing else calls it. */
-extern weak void __wasm_call_ctors(void);
-#endif
-
 static void libc_start_init(void)
 {
 	_init();
-#ifdef __wasm32__
-	if (__wasm_call_ctors) __wasm_call_ctors();
-#endif
 	uintptr_t a = (uintptr_t)&__init_array_start;
 	for (; a<(uintptr_t)&__init_array_end; a+=sizeof(void(*)()))
 		(*(void (**)(void))a)();

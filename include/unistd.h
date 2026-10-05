@@ -163,17 +163,6 @@ unsigned ualarm(unsigned, unsigned);
 int brk(void *);
 void *sbrk(intptr_t);
 pid_t vfork(void);
-#if defined(__wasm32__) && !defined(__GEXW_NO_VFORK_MACRO)
-/* wasm32 (gex): the child runs on in the caller's frame until its exec or
- * _exit, then vfork returns again with the pid (src/process/wasm32/
- * __gexw_vfork.c). */
-struct __jmp_buf_tag;
-int setjmp(struct __jmp_buf_tag *) __attribute__((__returns_twice__));
-struct __jmp_buf_tag *__gexw_vfork_jb(void);
-pid_t __gexw_vfork_child(void);
-pid_t __gexw_vfork_parent(void);
-#define vfork() (setjmp(__gexw_vfork_jb()) ? __gexw_vfork_parent() : __gexw_vfork_child())
-#endif
 int vhangup(void);
 int chroot(const char *);
 int getpagesize(void);

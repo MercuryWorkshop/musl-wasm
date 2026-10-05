@@ -104,6 +104,16 @@ __gex_get_sp:
 	global.get __stack_pointer
 	end_function
 
+# And setting it: fork's rewind (src/process/wasm32/__gex_fork.c) puts it
+# back where the unwound frames had it.
+	.globl __gex_set_sp
+	.type __gex_set_sp,@function
+__gex_set_sp:
+	.functype __gex_set_sp (i32) -> ()
+	local.get 0
+	global.set __stack_pointer
+	end_function
+
 # __gex_call_handler(handler, sig, info, uc, sp, rt): run a signal handler
 # on the C stack at `sp` (just below the kernel's frame): rt handlers are
 # void (int, siginfo_t *, void *), the others void (int).

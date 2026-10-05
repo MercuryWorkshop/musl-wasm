@@ -42,8 +42,16 @@ static inline long __gex_sc(long n, long a, long b, long c, long d, long e, long
 	return (long)(unsigned long)x[0];
 }
 
+/* fork (_Fork's __syscall(SYS_fork)): the wasm stack is unwound and
+ * rewound around the kernel's copy (src/process/wasm32/__gex_fork.c). Only
+ * here, where the number is a constant: a call to __gex_fork at every
+ * system call would make every function a fork point to asyncify. */
+long __gex_fork(void);
 static inline long __syscall0(long n)
-{ return __gex_sc(n, 0, 0, 0, 0, 0, 0); }
+{
+	if (n == SYS_fork) return __gex_fork();
+	return __gex_sc(n, 0, 0, 0, 0, 0, 0);
+}
 static inline long __syscall1(long n, long a1)
 { return __gex_sc(n, a1, 0, 0, 0, 0, 0); }
 static inline long __syscall2(long n, long a1, long a2)
