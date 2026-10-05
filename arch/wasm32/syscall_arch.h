@@ -17,6 +17,7 @@ void __gex_syscall_import(int, long long);
 /* ctx slots: x(n) = 8 * n. eax 0, ecx 1, edx 2, ebx 3, esp 4, ebp 5,
  * esi 6, edi 7; PC is slot 32. */
 unsigned long __gex_get_sp(void);
+/* gex's support library (libgex, linked by gex's wcc with every program) */
 void __gex_signal_frames(volatile unsigned long long *, unsigned long long);
 
 /* Signals (gex-kernel's wasm32 personality): a handler frame is set up in
