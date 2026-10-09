@@ -13,6 +13,7 @@
 #include "libc.h"
 #include "atomic.h"
 #include "syscall.h"
+#include "gex_dso.h"
 
 void __wasm_init_tls(void *);
 
@@ -63,6 +64,16 @@ static void static_init_tls(size_t *aux)
 	tls_block_size = __builtin_wasm_tls_size();
 	tls_block_align = __builtin_wasm_tls_align();
 	if (tls_block_align < sizeof(void *)) tls_block_align = sizeof(void *);
+	/* shared libraries' blocks follow libc's own (gex_dso.h) */
+	for (unsigned i = 0; i < __gex_dsos.count; i++) {
+		struct __gex_dso *d = &__gex_dsos.dso[i];
+		if (!d->tls_size) continue;
+		size_t a = d->tls_align < sizeof(void *) ? sizeof(void *) : d->tls_align;
+		tls_block_size = tls_block_size + a-1 & -a;
+		d->tls_offset = tls_block_size;
+		tls_block_size += d->tls_size;
+		if (a > tls_block_align) tls_block_align = a;
+	}
 
 	libc.tls_align = tls_block_align < MIN_TLS_ALIGN ? MIN_TLS_ALIGN : tls_block_align;
 	libc.tls_cnt = 0;
@@ -84,6 +95,7 @@ static void static_init_tls(size_t *aux)
 	if (__init_tp(td) < 0)
 		a_crash();
 	__wasm_init_tls(td->dtv);
+	__gex_dso_tls((void *)td->dtv, 1);
 }
 
 weak_alias(static_init_tls, __init_tls);

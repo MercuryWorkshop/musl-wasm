@@ -56,8 +56,19 @@ void __init_libc(char **envp, char *pn)
 	libc.secure = 1;
 }
 
+#ifdef __wasm__
+/* wasm32 (gex): the program's _init as crt1 passes it. In a shared libc
+ * (docs/gexcc.md 7.4) the _init above is libc's own dummy, bound inside
+ * libc.so; the program's is what its crt1 hands over. */
+static void (*program_init)(void);
+#endif
+
 static void libc_start_init(void)
 {
+#ifdef __wasm__
+	if (program_init) program_init();
+	else
+#endif
 	_init();
 	uintptr_t a = (uintptr_t)&__init_array_start;
 	for (; a<(uintptr_t)&__init_array_end; a+=sizeof(void(*)()))
@@ -73,6 +84,9 @@ int __libc_start_main(int (*main)(int,char **,char **), int argc, char **argv,
 	void (*init_dummy)(), void(*fini_dummy)(), void(*ldso_dummy)())
 {
 	char **envp = argv+argc+1;
+#ifdef __wasm__
+	program_init = (void (*)(void))init_dummy;
+#endif
 
 	/* External linkage, and explicit noinline attribute if available,
 	 * are used to prevent the stack frame used during init from

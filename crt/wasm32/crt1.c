@@ -16,8 +16,12 @@ weak void _fini();
  * wasm module has no .init_array to walk); libc_start_init calls _init
  * after libc's own setup, which is when they run elsewhere. */
 weak void __wasm_call_ctors(void);
+/* shared libraries' constructors first, as ld.so runs them before the
+ * program's (src/env/wasm32/__gex_dso.c; none in a static program) */
+void __gex_dso_init(void);
 void _init(void)
 {
+	__gex_dso_init();
 	if (__wasm_call_ctors) __wasm_call_ctors();
 }
 int __libc_start_main(int (*)(), int, char **,
