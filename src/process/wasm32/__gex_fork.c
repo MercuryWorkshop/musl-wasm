@@ -60,6 +60,14 @@ struct rec {
 
 static struct rec *volatile fork_rec;
 
+#ifdef GEX_SNAPSHOT
+/* The snapshot flavour (libgex's snapshot.c): a thread's record, and a
+ * driver's unwind that is a session snapshot's, which it parks and rewinds. */
+void *__gex_snap_begin(int (*)(void *), void *);
+void __gex_snap_end(void *);
+int __gex_snap_unwound(int (*)(void *), void *, unsigned long);
+#endif
+
 hidden int __gex_fork_child(void *);
 
 /* Run fn(arg) until it returns; an unwind for a fork stops here. Not
@@ -72,6 +80,9 @@ hidden __attribute__((noinline)) int __gex_fork_drive(int (*fn)(void *), void *a
 		int r = fn(arg);
 		if (__gex_asyncify(0, 0) != 1) return r;
 		__gex_asyncify(2, 0);
+#ifdef GEX_SNAPSHOT
+		if (__gex_snap_unwound(fn, arg, sp)) continue;
+#endif
 		/* this driver's function is what the child calls again */
 		struct rec *f = fork_rec;
 		f->drv.fn = fn;
@@ -86,7 +97,14 @@ hidden __attribute__((noinline)) int __gex_fork_drive(int (*fn)(void *), void *a
  * driver. */
 hidden int __gex_fork_run(int (*fn)(void *), void *arg)
 {
+#ifdef GEX_SNAPSHOT
+	void *s = __gex_snap_begin(fn, arg);
+	int r = __gex_fork_drive(fn, arg, __gex_get_sp());
+	__gex_snap_end(s);
+	return r;
+#else
 	return __gex_fork_drive(fn, arg, __gex_get_sp());
+#endif
 }
 
 /* The child's thread (a clone's, on the record's stack, with the forking
