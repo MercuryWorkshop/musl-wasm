@@ -21,7 +21,7 @@ struct __gex_dso {
 	size_t tls_offset;
 };
 
-#define GEX_DSO_MAX 256
+#define GEX_DSO_MAX 1024
 struct __gex_dsos {
 	unsigned version, count, max;
 	struct __gex_dso dso[GEX_DSO_MAX];
